@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Map Maker 9000</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 0;
+    }
+    #grid-container {
+      display: grid;
+      grid-gap: 2px;
+      margin: 20px 0;
+    }
+    .cell {
+      width: 30px;
+      height: 30px;
+      background-color: #ddd;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+    }
+    .cell.active {
+      background-color: #333;
+      color: white;
+    }
+    #output {
+      white-space: pre-wrap;
+      border: 1px solid #ccc;
+      padding: 10px;
+      width: 300px;
+      background-color: #f9f9f9;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    input[type="number"] {
+      width: 60px;
+      padding: 5px;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Map Maker 9000</h1>
+  <div class="controls">
+    <label>
+      Rows:
+      <input type="number" id="rows-input" min="1" value="10">
+    </label>
+    <label>
+      Columns:
+      <input type="number" id="cols-input" min="1" value="10">
+    </label>
+    <button id="resize-button">Resize Grid</button>
+  </div>
+  <div id="grid-container"></div>
+  <button id="generate-button">Generate Array</button>
+  <div id="output"></div>
+<hr>
+  <h2>Text to Numbers</h2>
+  <input type="text" id="text-input" placeholder="Enter text like HELLO WORLD">
+  <button id="convert-button">Convert</button>
+  <pre id="converted-output"></pre>
+<label>
+  <input type="checkbox" id="underscore-toggle">
+  Show 0s as _
+</label>
+
+
+  <script>
+    const gridContainer = document.getElementById('grid-container');
+    const rowsInput = document.getElementById('rows-input');
+    const colsInput = document.getElementById('cols-input');
+    const output = document.getElementById('output');
+    let grid = [];
+
+    function createGrid(rows, cols) {
+      gridContainer.innerHTML = '';
+      gridContainer.style.gridTemplateColumns = `repeat(${cols}, 30px)`;
+      grid = Array.from({ length: rows }, () => Array(cols).fill(0));
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const cell = document.createElement('div');
+          cell.classList.add('cell');
+          if (r === 0 || r === rows - 1 || c === 0 || c === cols - 1) {
+            cell.classList.add('active');
+            grid[r][c] = 1;
+          }
+          cell.dataset.row = r;
+          cell.dataset.col = c;
+          cell.textContent = grid[r][c];
+          cell.addEventListener('click', () => toggleCell(cell));
+          cell.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            decrementCell(cell);
+          });
+          gridContainer.appendChild(cell);
+        }
+      }
+    }
+
+    function toggleCell(cell) {
+      const row = parseInt(cell.dataset.row);
+      const col = parseInt(cell.dataset.col);
+      grid[row][col] = (grid[row][col] + 1) % 11;
+      cell.textContent = grid[row][col];
+      cell.classList.toggle('active', grid[row][col] !== 0);
+    }
+
+    function decrementCell(cell) {
+      const row = parseInt(cell.dataset.row);
+      const col = parseInt(cell.dataset.col);
+      grid[row][col] = (grid[row][col] - 1 + 11) % 11;
+      cell.textContent = grid[row][col];
+      cell.classList.toggle('active', grid[row][col] !== 0);
+    }
+
+    function formatGrid(grid) {
+    const underscore = document.getElementById('underscore-toggle').checked;
+    return grid
+    .map(row => {
+      const formattedRow = row.map(val => (underscore && val === 0 ? '_' : val));
+      return `    [${formattedRow.join(', ')}]`;
+    })
+    .join(',\n');
+  }
+
+
+    document.getElementById('resize-button').addEventListener('click', () => {
+      const rows = parseInt(rowsInput.value);
+      const cols = parseInt(colsInput.value);
+      createGrid(rows, cols);
+    });
+
+    document.getElementById('generate-button').addEventListener('click', () => {
+      output.textContent = `[\n${formatGrid(grid)}\n]`;
+    });
+
+    createGrid(parseInt(rowsInput.value), parseInt(colsInput.value));
+    document.getElementById('convert-button').addEventListener('click', () => {
+  const text = document.getElementById('text-input').value.toUpperCase();
+  const outputEl = document.getElementById('converted-output');
+
+  const numbers = Array.from(text).map(char => {
+      if (char === ' ') return 0;
+      const code = char.charCodeAt(0);
+      if (code >= 65 && code <= 90) {
+        return code - 64; // A=1, ..., Z=26
+      }
+      return null; // skip unsupported characters
+    }).filter(n => n !== null);
+
+    outputEl.textContent = `[${numbers.join(', ')}]`;
+  });
+  </script>
+</body>
+</html>
