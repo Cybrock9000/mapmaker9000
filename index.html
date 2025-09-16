@@ -55,6 +55,12 @@
       font-size: 16px;
       cursor: pointer;
     }
+    textarea {
+      width: 300px;
+      height: 120px;
+      font-family: monospace;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -73,16 +79,21 @@
   <div id="grid-container"></div>
   <button id="generate-button">Generate Array</button>
   <div id="output"></div>
-<hr>
+
+  <hr>
+  <h2>Import Array</h2>
+  <textarea id="import-input" placeholder="Paste your array here"></textarea><br>
+  <button id="import-button">Import Array</button>
+
+  <hr>
   <h2>Text to Numbers</h2>
   <input type="text" id="text-input" placeholder="Enter text like HELLO WORLD">
   <button id="convert-button">Convert</button>
   <pre id="converted-output"></pre>
-<label>
-  <input type="checkbox" id="underscore-toggle">
-  Show 0s as _
-</label>
-
+  <label>
+    <input type="checkbox" id="underscore-toggle">
+    Show 0s as _
+  </label>
 
   <script>
     const gridContainer = document.getElementById('grid-container');
@@ -91,7 +102,7 @@
     const output = document.getElementById('output');
     let grid = [];
 
-    function createGrid(rows, cols) {
+    function createGrid(rows, cols, data = null) {
       gridContainer.innerHTML = '';
       gridContainer.style.gridTemplateColumns = `repeat(${cols}, 30px)`;
       grid = Array.from({ length: rows }, () => Array(cols).fill(0));
@@ -100,10 +111,12 @@
         for (let c = 0; c < cols; c++) {
           const cell = document.createElement('div');
           cell.classList.add('cell');
-          if (r === 0 || r === rows - 1 || c === 0 || c === cols - 1) {
-            cell.classList.add('active');
+          if (data && data[r] && data[r][c] !== undefined) {
+            grid[r][c] = data[r][c];
+          } else if (r === 0 || r === rows - 1 || c === 0 || c === cols - 1) {
             grid[r][c] = 1;
           }
+          if (grid[r][c] !== 0) cell.classList.add('active');
           cell.dataset.row = r;
           cell.dataset.col = c;
           cell.textContent = grid[r][c];
@@ -134,15 +147,14 @@
     }
 
     function formatGrid(grid) {
-    const underscore = document.getElementById('underscore-toggle').checked;
-    return grid
-    .map(row => {
-      const formattedRow = row.map(val => (underscore && val === 0 ? '_' : val));
-      return `    [${formattedRow.join(', ')}]`;
-    })
-    .join(',\n');
-  }
-
+      const underscore = document.getElementById('underscore-toggle').checked;
+      return grid
+        .map(row => {
+          const formattedRow = row.map(val => (underscore && val === 0 ? '_' : val));
+          return `    [${formattedRow.join(', ')}]`;
+        })
+        .join(',\n');
+    }
 
     document.getElementById('resize-button').addEventListener('click', () => {
       const rows = parseInt(rowsInput.value);
@@ -154,22 +166,45 @@
       output.textContent = `[\n${formatGrid(grid)}\n]`;
     });
 
-    createGrid(parseInt(rowsInput.value), parseInt(colsInput.value));
-    document.getElementById('convert-button').addEventListener('click', () => {
-  const text = document.getElementById('text-input').value.toUpperCase();
-  const outputEl = document.getElementById('converted-output');
+    // Import feature (supports "_" as zero)
+    document.getElementById('import-button').addEventListener('click', () => {
+      let text = document.getElementById('import-input').value.trim();
+      try {
+        // Replace underscores with 0
+        text = text.replace(/_/g, "0");
 
-  const numbers = Array.from(text).map(char => {
-      if (char === ' ') return 0;
-      const code = char.charCodeAt(0);
-      if (code >= 65 && code <= 90) {
-        return code - 64; // A=1, ..., Z=26
+        // Parse into JS array
+        const data = eval(text);
+
+        if (Array.isArray(data) && Array.isArray(data[0])) {
+          rowsInput.value = data.length;
+          colsInput.value = data[0].length;
+          createGrid(data.length, data[0].length, data);
+        } else {
+          alert("Invalid array format. Must be a 2D array.");
+        }
+      } catch (e) {
+        alert("Invalid array format. Paste the output directly from the generator.");
       }
-      return null; // skip unsupported characters
-    }).filter(n => n !== null);
+    });
 
-    outputEl.textContent = `[${numbers.join(', ')}]`;
-  });
+    createGrid(parseInt(rowsInput.value), parseInt(colsInput.value));
+
+    document.getElementById('convert-button').addEventListener('click', () => {
+      const text = document.getElementById('text-input').value.toUpperCase();
+      const outputEl = document.getElementById('converted-output');
+
+      const numbers = Array.from(text).map(char => {
+        if (char === ' ') return 0;
+        const code = char.charCodeAt(0);
+        if (code >= 65 && code <= 90) {
+          return code - 64; // A=1, ..., Z=26
+        }
+        return null;
+      }).filter(n => n !== null);
+
+      outputEl.textContent = `[${numbers.join(', ')}]`;
+    });
   </script>
 </body>
 </html>
