@@ -17,6 +17,7 @@
       display: grid;
       grid-gap: 2px;
       margin: 20px 0;
+      user-select: none;
     }
     .cell {
       width: 30px;
@@ -44,6 +45,7 @@
       display: flex;
       gap: 10px;
       margin-bottom: 10px;
+      flex-wrap: wrap;
     }
     input[type="number"] {
       width: 60px;
@@ -75,6 +77,10 @@
       <input type="number" id="cols-input" min="1" value="10">
     </label>
     <button id="resize-button">Resize Grid</button>
+    <label>
+      Brush:
+      <input type="number" id="brush-input" min="0" max="99" value="1">
+    </label>
   </div>
   <div id="grid-container"></div>
   <button id="generate-button">Generate Array</button>
@@ -99,8 +105,10 @@
     const gridContainer = document.getElementById('grid-container');
     const rowsInput = document.getElementById('rows-input');
     const colsInput = document.getElementById('cols-input');
+    const brushInput = document.getElementById('brush-input');
     const output = document.getElementById('output');
     let grid = [];
+    let isPainting = false;
 
     function createGrid(rows, cols, data = null) {
       gridContainer.innerHTML = '';
@@ -116,34 +124,42 @@
           } else if (r === 0 || r === rows - 1 || c === 0 || c === cols - 1) {
             grid[r][c] = 1;
           }
-          if (grid[r][c] !== 0) cell.classList.add('active');
+          updateCell(cell, r, c);
+
           cell.dataset.row = r;
           cell.dataset.col = c;
-          cell.textContent = grid[r][c];
-          cell.addEventListener('click', () => toggleCell(cell));
-          cell.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            decrementCell(cell);
+
+          // Paint on click
+          cell.addEventListener('mousedown', () => {
+            isPainting = true;
+            paintCell(cell);
           });
+          // Paint on drag
+          cell.addEventListener('mouseover', () => {
+            if (isPainting) paintCell(cell);
+          });
+
           gridContainer.appendChild(cell);
         }
       }
+
+      // Stop painting on mouse up
+      document.addEventListener('mouseup', () => {
+        isPainting = false;
+      });
     }
 
-    function toggleCell(cell) {
-      const row = parseInt(cell.dataset.row);
-      const col = parseInt(cell.dataset.col);
-      grid[row][col] = (grid[row][col] + 1) % 11;
-      cell.textContent = grid[row][col];
-      cell.classList.toggle('active', grid[row][col] !== 0);
+    function updateCell(cell, r, c) {
+      cell.textContent = grid[r][c];
+      cell.classList.toggle('active', grid[r][c] !== 0);
     }
 
-    function decrementCell(cell) {
+    function paintCell(cell) {
       const row = parseInt(cell.dataset.row);
       const col = parseInt(cell.dataset.col);
-      grid[row][col] = (grid[row][col] - 1 + 11) % 11;
-      cell.textContent = grid[row][col];
-      cell.classList.toggle('active', grid[row][col] !== 0);
+      const brush = parseInt(brushInput.value) || 0;
+      grid[row][col] = brush;
+      updateCell(cell, row, col);
     }
 
     function formatGrid(grid) {
@@ -166,16 +182,12 @@
       output.textContent = `[\n${formatGrid(grid)}\n]`;
     });
 
-    // Import feature (supports "_" as zero)
+    // Import feature
     document.getElementById('import-button').addEventListener('click', () => {
       let text = document.getElementById('import-input').value.trim();
       try {
-        // Replace underscores with 0
         text = text.replace(/_/g, "0");
-
-        // Parse into JS array
         const data = eval(text);
-
         if (Array.isArray(data) && Array.isArray(data[0])) {
           rowsInput.value = data.length;
           colsInput.value = data[0].length;
