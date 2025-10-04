@@ -22,17 +22,14 @@
     .cell {
       width: 30px;
       height: 30px;
-      background-color: #ddd;
       display: flex;
       justify-content: center;
       align-items: center;
       cursor: pointer;
       font-size: 16px;
       font-weight: bold;
-    }
-    .cell.active {
-      background-color: #333;
       color: white;
+      border: 1px solid #999;
     }
     #output {
       white-space: pre-wrap;
@@ -110,6 +107,21 @@
     let grid = [];
     let isPainting = false;
 
+    // 🎨 Number color map
+    const colorMap = {
+      0: "#ddd",    // empty
+      1: "#000000", // black wall
+      2: "#ff0000", // red
+      3: "#00ff00", // green
+      4: "#0000ff", // blue
+      5: "#ffff00", // yellow
+      6: "#ff00ff", // magenta
+      7: "#00ffff", // cyan
+      8: "#ff8800", // orange
+      9: "#8800ff", // purple
+      10: "#008888" // teal
+    };
+
     function createGrid(rows, cols, data = null) {
       gridContainer.innerHTML = '';
       gridContainer.style.gridTemplateColumns = `repeat(${cols}, 30px)`;
@@ -150,8 +162,10 @@
     }
 
     function updateCell(cell, r, c) {
-      cell.textContent = grid[r][c];
-      cell.classList.toggle('active', grid[r][c] !== 0);
+      const val = grid[r][c];
+      cell.textContent = val;
+      cell.style.backgroundColor = colorMap[val] || "#555"; // default gray if not mapped
+      cell.style.color = val === 0 ? "#000" : "#fff";
     }
 
     function paintCell(cell) {
