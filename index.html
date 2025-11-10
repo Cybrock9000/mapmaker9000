@@ -16,7 +16,7 @@
     #grid-container {
       display: grid;
       grid-gap: 2px;
-      margin: 20px 0;
+      margin: 20px 0 5px 0;
       user-select: none;
     }
     .cell {
@@ -30,6 +30,13 @@
       font-weight: bold;
       color: white;
       border: 1px solid #999;
+    }
+    #coords {
+      font-family: monospace;
+      font-size: 16px;
+      color: #333;
+      margin-bottom: 10px;
+      height: 20px;
     }
     #output {
       white-space: pre-wrap;
@@ -79,7 +86,10 @@
       <input type="number" id="brush-input" min="0" max="99" value="1">
     </label>
   </div>
+
   <div id="grid-container"></div>
+  <div id="coords"></div>
+  
   <button id="generate-button">Generate Array</button>
   <div id="output"></div>
 
@@ -104,22 +114,22 @@
     const colsInput = document.getElementById('cols-input');
     const brushInput = document.getElementById('brush-input');
     const output = document.getElementById('output');
+    const coordsDisplay = document.getElementById('coords');
     let grid = [];
     let isPainting = false;
 
-    // 🎨 Number color map
     const colorMap = {
-      0: "#ddd",    // empty
-      1: "#000000", // black wall
-      2: "#ff0000", // red
-      3: "#00ff00", // green
-      4: "#0000ff", // blue
-      5: "#ffff00", // yellow
-      6: "#ff00ff", // magenta
-      7: "#00ffff", // cyan
-      8: "#ff8800", // orange
-      9: "#8800ff", // purple
-      10: "#008888" // teal
+      0: "#ddd",
+      1: "#000000",
+      2: "#ff0000",
+      3: "#00ff00",
+      4: "#0000ff",
+      5: "#ffff00",
+      6: "#ff00ff",
+      7: "#00ffff",
+      8: "#ff8800",
+      9: "#8800ff",
+      10: "#008888"
     };
 
     function createGrid(rows, cols, data = null) {
@@ -141,21 +151,28 @@
           cell.dataset.row = r;
           cell.dataset.col = c;
 
-          // Paint on click
           cell.addEventListener('mousedown', () => {
             isPainting = true;
             paintCell(cell);
           });
-          // Paint on drag
+
           cell.addEventListener('mouseover', () => {
             if (isPainting) paintCell(cell);
+            coordsDisplay.textContent = `X: ${c}, Y: ${r}`;
+          });
+
+          cell.addEventListener('mouseenter', () => {
+            coordsDisplay.textContent = `X: ${c}, Y: ${r}`;
+          });
+
+          cell.addEventListener('mouseleave', () => {
+            coordsDisplay.textContent = '';
           });
 
           gridContainer.appendChild(cell);
         }
       }
 
-      // Stop painting on mouse up
       document.addEventListener('mouseup', () => {
         isPainting = false;
       });
@@ -164,7 +181,7 @@
     function updateCell(cell, r, c) {
       const val = grid[r][c];
       cell.textContent = val;
-      cell.style.backgroundColor = colorMap[val] || "#555"; // default gray if not mapped
+      cell.style.backgroundColor = colorMap[val] || "#555";
       cell.style.color = val === 0 ? "#000" : "#fff";
     }
 
@@ -196,7 +213,6 @@
       output.textContent = `[\n${formatGrid(grid)}\n]`;
     });
 
-    // Import feature
     document.getElementById('import-button').addEventListener('click', () => {
       let text = document.getElementById('import-input').value.trim();
       try {
@@ -224,7 +240,7 @@
         if (char === ' ') return 0;
         const code = char.charCodeAt(0);
         if (code >= 65 && code <= 90) {
-          return code - 64; // A=1, ..., Z=26
+          return code - 64;
         }
         return null;
       }).filter(n => n !== null);
